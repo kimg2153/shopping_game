@@ -70,39 +70,57 @@ def delivery_charge_set(stock, price):
 # 1. 상품 목록 
 def goods_list():
     for number, item in enumerate(items_val,start=1) :
-        print(f"{number}. {item.name:<15}   {item.price:>8,}원       ({"품절" if item.stock == 0 else f"재고 {item.stock} 개" })" )
+        stock_text = "품절" if item.stock == 0 else f"재고 {item.stock} 개"
+        print(f"{number}. {item.name:<15}   {item.price:>8,}원       ({stock_text})")
     user_select()
 
 # 2. 담기
 
 def item_add_basket(user_sl):
     user_sl_sec = user_sl_num(2)
-    if items_val[user_sl].stock >= user_sl_sec :
-        if len(items_basket) > 0 :
-            for number, item in enumerate(items_basket,start=1) :
-                key_name = list(item.keys())
-                if item[key_name[1]].name == items_val[user_sl].name :
-                    if  items_val[user_sl] >=  items_basket[number-1][items_val[user_sl].name] + user_sl_sec :
-                        items_basket[number-1][items_val[user_sl].name] = items_basket[number-1][items_val[user_sl].name]+ user_sl_sec
-                    else :
-                        print("재고가 부족합니다.")
-                        item_add_basket(user_sl)
-                else :
-                    items_basket.append({f"{items_val[user_sl].name}":user_sl_sec,"item":items_val[user_sl],"delivery_charge":delivery_charge_set(user_sl_sec,items_val[user_sl].price)})
-                    print(f"{items_val[user_sl].name} {user_sl_sec}개를 담았습니다.")
-            # items_val[user_sl].stock = items_val[user_sl].stock - user_sl_sec
-                    # else :
-                    #     print("장바구니의 수량을 초과했습니다. 다시 입력하세요")
-                    #     goods_remove_basket()
+    goods = items_val[user_sl]
 
-        else:
-            items_basket.append({f"{items_val[user_sl].name}":user_sl_sec,"item":items_val[user_sl],"delivery_charge":delivery_charge_set(user_sl_sec,items_val[user_sl].price)})
-            print(f"{items_val[user_sl].name} {user_sl_sec}개를 담았습니다.")
-
+    if user_sl_sec <= 0:
+        print("수량은 1개 이상 입력하세요.")
         user_select()
-    else :
-        print("재고가 부족합니다.")
-        item_add_basket(user_sl)
+        return
+
+    # 장바구니에 동일한 상품이 있는지 확인
+    for item in items_basket:
+        if item["item"].name == goods.name:
+            current_quantity = item[goods.name]
+            total_quantity = current_quantity + user_sl_sec
+
+            # 기존 수량 + 추가 수량이 재고를 초과하는지 확인
+            if total_quantity > goods.stock:
+                print(f"재고가 부족합니다. (현재 재고: {goods.stock}개, 장바구니: {current_quantity}개)")
+                user_select()
+                return
+
+            # 기존 장바구니 수량 증가
+            item[goods.name] = total_quantity
+
+            # 배송비 다시 계산
+            item["delivery_charge"] = delivery_charge_set(total_quantity, goods.price)
+
+            print(f"{goods.name} {user_sl_sec}개를 추가했습니다. (총 {total_quantity}개)")
+            user_select()
+            return
+
+    # 장바구니에 없는 상품이라면 새로 추가
+    if user_sl_sec > goods.stock:
+        print(f"재고가 부족합니다. (현재 재고: {goods.stock}개)")
+        user_select()
+        return
+
+    items_basket.append({
+        goods.name: user_sl_sec,
+        "item": goods,
+        "delivery_charge": delivery_charge_set(user_sl_sec, goods.price)
+    })
+
+    print(f"{goods.name} {user_sl_sec}개를 담았습니다.")
+    user_select()
 
 def goods_add_basket():
     user_sl = user_sl_num(1) - 1
@@ -151,7 +169,11 @@ def show_basket():
     if len(items_basket) > 0 :
         for number, item in enumerate(items_basket,start=1) :
             key_name = list(item.keys())
-            print(f"{number}. {item[key_name[1]].name:<15}   {item[key_name[1]].price:>8,}원 {item["delivery_charge"]:>8}   {f"재고 {item[key_name[1]].stock} 개" } {f"장바구니수량 {item[key_name[0]]} "}  " )
+            goods = item[key_name[1]]
+            quantity = item[key_name[0]]
+            delivery_charge = item["delivery_charge"]
+
+            print(f"{number}. {goods.name:<15}   {goods.price:>8,}원 {delivery_charge:>8}   재고 {goods.stock}개 장바구니수량 {quantity}개")
         return True
     else :
         print("장바구니가 비어있습니다.")
@@ -180,8 +202,9 @@ def coupon_ck_main():
 
 
 # 메뉴 선택 input
-def user_sl_num(slm_num) :
-    return int(input(sl_message[slm_num]))
+def user_sl_num(slm_num):
+    user_input = input(sl_message[slm_num])
+    return int(user_input) if user_input.lstrip("-").isdigit() else user_input
 # 상품 선택 input
 
 
@@ -200,7 +223,8 @@ def user_select():
         show_basket_main()
     if user_sl == 5:
         coupon_ck_main()
-        
+    if user_sl == "q":
+        pass
 
 
     
