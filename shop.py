@@ -60,7 +60,7 @@ def menu():
 
 def delivery_charge_set(stock, price):
     c_num = int(stock) * int(price)
-    print(c_num , c_num >= 30000)
+    # print(c_num , c_num >= 30000)
     if c_num >= 30000 or stock == 0 :
         return 0
     else :
@@ -136,29 +136,53 @@ def goods_add_basket():
 
 
 def goods_remove_basket():
+    # 장바구니가 비어 있는지 확인
+    if not items_basket:
+        print("장바구니가 비어있습니다.")
+        return
     user_sl = user_sl_num(1)
-    user_sl2 = user_sl_num(2)
-    for number, item in enumerate(items_basket,start=1) :
-        key_name = list(item.keys())
-        if number == user_sl :
-            if item[key_name[0]] == user_sl2 :
-                items_basket.pop(number-1)
-                user_select()    
-            elif item[key_name[0]] > user_sl2 :
-                item[key_name[0]] = item[key_name[0]] - user_sl2
-                item["delivery_charge"] = delivery_charge_set(item[key_name[0]],item[key_name[1]].price)
-                user_select()
-            else :
-                print("장바구니의 수량을 초과했습니다. 다시 입력하세요")
-                goods_remove_basket()
 
+    # 상품 번호 확인
+    if not isinstance(user_sl, int) or not 1 <= user_sl <= len(items_basket):
+        print("올바른 상품 번호를 입력하세요.")
+        return
+    # 선택한 상품 가져오기
+    item = items_basket[user_sl - 1]
+    goods = item["item"]
+    quantity = item[goods.name]
+
+    # 제거할 수량 입력
+    user_sl2 = user_sl_num(2)
+
+    # 수량 검사
+    if not isinstance(user_sl2, int) or user_sl2 <= 0:
+        print("수량은 1개 이상 입력하세요.")
+        return
+    # 장바구니 수량 초과
+    if user_sl2 > quantity:
+        print(f"장바구니 수량이 부족합니다. (현재 {quantity}개)")
+        return
+    # 전체 수량 제거
+    if user_sl2 == quantity:
+        items_basket.pop(user_sl - 1)
+        print(f"{goods.name} 상품을 장바구니에서 제거했습니다.")
+        return
+    # 일부 수량 제거
+    else:
+        item[goods.name] -= user_sl2
+
+        # 배송비 재계산
+        item["delivery_charge"] = delivery_charge_set(item[goods.name], goods.price)
+        print(f"{goods.name} {user_sl2}개를 제거했습니다. (남은 수량: {item[goods.name]}개)")
+        return
 
 def goods_remove_basket_main():
     show_result = show_basket()
-    if not show_result :
-        user_select()
-    else :
-      goods_remove_basket()
+    if show_result :
+        goods_remove_basket()
+    
+      
+    user_select()
 
 
 
