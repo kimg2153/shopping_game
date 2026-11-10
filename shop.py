@@ -58,10 +58,10 @@ def menu():
 
 
 
-def delivery_charge_set(stock, price):
-    c_num = int(stock) * int(price)
-    # print(c_num , c_num >= 30000)
-    if c_num >= 30000 or stock == 0 :
+def delivery_charge_set( price):
+    # c_num = int(stock) * int(price)
+    # # print(c_num , c_num >= 30000)
+    if price >= 30000:
         return 0
     else :
         return 3000
@@ -100,8 +100,10 @@ def item_add_basket(user_sl):
             # 기존 장바구니 수량 증가
             item[goods.name] = total_quantity
 
-            # 배송비 다시 계산
-            item["delivery_charge"] = delivery_charge_set(total_quantity, goods.price)
+            # # 배송비 다시 계산
+            # item["delivery_charge"] = delivery_charge_set(total_quantity, goods.price)
+            # 총 금액 포함
+            item["total_price"] = total_quantity*goods.price
 
             print(f"{goods.name} {user_sl_sec}개를 추가했습니다. (총 {total_quantity}개)")
             user_select()
@@ -116,7 +118,8 @@ def item_add_basket(user_sl):
     items_basket.append({
         goods.name: user_sl_sec,
         "item": goods,
-        "delivery_charge": delivery_charge_set(user_sl_sec, goods.price)
+        "total_price": user_sl_sec * goods.price
+        # "delivery_charge": delivery_charge_set(user_sl_sec, goods.price)
     })
 
     print(f"{goods.name} {user_sl_sec}개를 담았습니다.")
@@ -133,7 +136,6 @@ def goods_add_basket():
 
 
 # 3. 빼기
-
 
 def goods_remove_basket():
     # 장바구니가 비어 있는지 확인
@@ -172,10 +174,11 @@ def goods_remove_basket():
         item[goods.name] -= user_sl2
 
         # 배송비 재계산
-        item["delivery_charge"] = delivery_charge_set(item[goods.name], goods.price)
+        # item["delivery_charge"] = delivery_charge_set(item[goods.name], goods.price)
+        item["total_price"] = item[goods.name] * goods.price
         print(f"{goods.name} {user_sl2}개를 제거했습니다. (남은 수량: {item[goods.name]}개)")
         return
-
+# 빼기 메인
 def goods_remove_basket_main():
     show_result = show_basket()
     if show_result :
@@ -195,34 +198,96 @@ def show_basket():
             key_name = list(item.keys())
             goods = item[key_name[1]]
             quantity = item[key_name[0]]
-            delivery_charge = item["delivery_charge"]
-
-            print(f"{number}. {goods.name:<15}   {goods.price:>8,}원 {delivery_charge:>8}   재고 {goods.stock}개 장바구니수량 {quantity}개")
+            # delivery_charge = item["delivery_charge"]
+            #{delivery_charge:>8}
+            print(f"{number}. {goods.name:<15}   {goods.price:>8,}원    재고 {goods.stock}개 장바구니수량 {quantity}개")
         return True
     else :
         print("장바구니가 비어있습니다.")
         return False 
     
-
+# 장바구니 메인
 def show_basket_main():
     show_basket()
     user_select()
 
 #5 쿠폰
-def coupon_ck():
-    pass
+    
 
 
+# 선택한 쿠폰을 계산해주기
+
+global coupon
+coupon = 0
+coupon_list_text = ["쿠폰 없음","10% 할인 (최대 5,000원)","3,000원 할인 (20,000원 이상 구매시)"]
+def coupon_ck(user_sl,price):
+    # print(user_sl)
+    if user_sl == 1:
+        return 0
+    elif user_sl == 2:
+        if (price * 0.1) > 5000 : return 5000
+        elif (price * 0.1) <= 5000 : return (price * 0.1)
+    elif user_sl == 3:
+        if price >= 20000 : return 3000
+    else :
+        return 0
+# 쿠폰 선택 메인
 def coupon_ck_main():
-    print("1. 쿠폰 없음\n")
-    print("2. 10% 할인 (최대 5,000원)\n")
-    print("3. 3,000원 할안 (20,000원 이상 구매시)\n")
+    for number,item in enumerate(coupon_list_text,start=1):
+        print(f"{number}. {item}")
     user_sl = user_sl_num(3)
+    global coupon
+    coupon = user_sl
+    
+    print(f"[{coupon_list_text[coupon-1]}] 쿠폰을 적용했습니다.")
+    user_select()
 
 
+def receipt_main():
+    receipt_print()
 
 
+def receipt_print():
+    
+    item_sum = 0
+    print("-"*40)
+    for item in items_basket:
+        print(f"{item["item"].name} x {item[item["item"].name]} {item["total_price"]:>3,.0f}원")
+        item_sum += item["total_price"]
+        
+        for in_item in items_val:
+            if in_item.name == item["item"].name:
+                # print(":::",in_item.stock,item[item["item"].name] )
 
+                in_item.stock = in_item.stock - item[item["item"].name]
+
+    print("-"*40)
+    print(f"{"상품 합계":<0}    {item_sum:>3,.0f}원")
+    coupon_sale_val = coupon_ck(coupon,item_sum)
+    print(f"할인 {coupon_sale_val:,.0f}원  [{coupon_list_text[coupon-1]}]")
+    delivery  = delivery_charge_set(item_sum)
+    print(f"배송비 {delivery:,.0f}원")
+    # print(item_sum,coupon_sale_val,(delivery if delivery >0 else 0))
+    print(f"{"결제 금액":<0} {(item_sum - coupon_sale_val) + (delivery if delivery >0 else 0):,.0f}")
+    print("-"*40)
+
+    print("결제가 완료 되었습니다. 감사합니다.")
+    clear_item()
+    user_select()
+    
+
+
+# 바구니 초기화
+def clear_item() :
+    global items_basket
+    items_basket.clear()
+
+def payment():
+    receipt_main()
+    # print(items_basket)
+
+
+    pass
 
 
 # 메뉴 선택 input
@@ -247,11 +312,11 @@ def user_select():
         show_basket_main()
     if user_sl == 5:
         coupon_ck_main()
+    if user_sl == 6:
+        payment()
     if user_sl == "q":
         pass
 
-
-    
     else :
         pass
 
