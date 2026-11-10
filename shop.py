@@ -283,11 +283,12 @@ def clear_item() :
     items_basket.clear()
 
 def payment():
-    receipt_main()
-    # print(items_basket)
+    if len(items_basket) > 0 :
+         receipt_main()
+    else :
+       print("장바구니가 비었습니다.")
+       user_select() 
 
-
-    pass
 
 
 # 메뉴 선택 input
@@ -318,7 +319,8 @@ def user_select():
         pass
 
     else :
-        pass
+        print("다시 입력해주세요")
+        user_select()
 
 
 
