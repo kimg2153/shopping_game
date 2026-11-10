@@ -13,12 +13,9 @@
 
 # 상품
 # 장바구니
-class Shopping(): 
+class Shopping():       # 추후 추가 버전으로 업데이트 예정
     def init(self):
         pass
-
-#        for number in enumerate(self.items, start=1):
-
 
 items_val = []
 items_basket =[]
