@@ -5,5 +5,5 @@
 
 
 ## 구현한 기능 소개
-    ![이미지](images/img00.png)
+![이미지](images/img00.png)
 
